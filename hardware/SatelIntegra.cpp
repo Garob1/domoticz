@@ -1128,6 +1128,18 @@ int SatelIntegra::SendCommand(const unsigned char* cmd, const unsigned int cmdLe
 	do
 	{
 		int ret = recv(m_socket, (char*)&buffer[totalRet], MAX_LENGTH_OF_ANSWER - totalRet, 0);
+#ifdef DEBUG_SatelIntegra
+		Log(LOG_STATUS, "SendCommand: totalRet %d ret %d buffer:%s", totalRet, ret, buffer);
+                Log(LOG_STATUS, "SendCommand: ret %d buffer: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X", ret, buffer[0],buffer[1],buffer[2],buffer[3],buffer[4],buffer[5],buffer[6],buffer[7],buffer[8],buffer[9]);
+#endif
+               //ERROR answer handling  Message 0xEF with 1 byte, all answers except 0x00 - OK and 0xFF - command accepted, will be processed
+               if( ret<0 && buffer[2]==0xEF && buffer[3]>0x00 && buffer[3]!=0xFF )
+	       {
+		       //not OK
+		      Log(LOG_ERROR, "SendCommand: Error message (0xEF) with code: %d (%02X)", buffer[3],buffer[3]);   
+                      ret = expectedLength;       
+                };                           
+    		
 		totalRet += ret;
 		if ((ret <= 0) || (totalRet >= MAX_LENGTH_OF_ANSWER))
 		{
